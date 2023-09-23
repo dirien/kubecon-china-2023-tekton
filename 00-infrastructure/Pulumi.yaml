@@ -1,0 +1,3 @@
+name: kubecon-china-tekton-infrastructure
+runtime: nodejs
+description: A minimal AWS TypeScript Pulumi program

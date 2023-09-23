@@ -1,0 +1,12 @@
+{
+    "name": "kubecon-china-tekton",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^16"
+    },
+    "dependencies": {
+        "@pulumi/pulumi": "3.83.0",
+        "@pulumi/aws": "5.42.0",
+        "@pulumi/eks": "1.0.3"
+    }
+}
