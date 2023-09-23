@@ -1,0 +1,13 @@
+{
+    "name": "kubecon-china-tekton-kubernetes",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^16"
+    },
+    "dependencies": {
+        "@pulumi/command": "^0.9.0",
+        "@pulumi/docker": "^4.4.1",
+        "@pulumi/kubernetes": "^4.2.0",
+        "@pulumi/pulumi": "^3.84.0"
+    }
+}
