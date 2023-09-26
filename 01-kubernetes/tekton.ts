@@ -13,20 +13,33 @@ export class Tekton extends pulumi.ComponentResource {
             parent: this,
         });
 
-        const tektonAllComponents = new k8s.yaml.ConfigFile("tekton-components", {
-            file: "./tekton/operator_v1alpha1_config_cr.yaml",
+        const tektonAllComponents = new k8s.apiextensions.CustomResourcePatch("tekton-pipeline-patch", {
+            kind: "TektonConfig",
+            apiVersion: "operator.tekton.dev/v1alpha1",
+            metadata: {
+                name: "config"
+            },
+            spec: {
+                profile: "all",
+                targetNamespace: "tekton-pipelines",
+                pruner: {
+                    resources: [
+                        "pipelinerun",
+                        "taskrun",
+                    ],
+                    keep: 100,
+                    schedule: "0 8 * * *",
+                },
+                pipeline: {
+                    "enable-tekton-oci-bundles": true,
+                    "enable-api-fields": "alpha",
+                }
+            }
         }, {
             parent: this,
-            dependsOn: tektonOperator,
-            transformations: [args => {
-                if (args.type == "kubernetes:operator.tekton.dev/v1alpha1:TektonConfig") {
-                    args.props["spec"]["pipeline"] = {
-                        "enable-tekton-oci-bundles": true,
-                        "enable-api-fields": "alpha",
-                    }
-                }
-                return undefined;
-            }]
+            dependsOn: [
+                tektonOperator,
+            ],
         });
 
         const buildNamespace = new k8s.core.v1.Namespace("kubecon-china-build", {
@@ -102,50 +115,49 @@ export class Tekton extends pulumi.ComponentResource {
             ],
         });
 
-        const ghcrSecret = new k8s.core.v1.Secret("github-credentials", {
-                    metadata: {
-                        name: "ghcr-auth",
-                        namespace: buildNamespace.metadata.name,
-                    },
-                    stringData: {
-                        "config.json": pulumi.jsonStringify({
-                            "auths": {
-                                "ghcr.io": {
-                                    "auth": config.requireSecret("ghcr-auth"),
-                                }
-                            }
-                        }),
-                    }
+        new k8s.core.v1.Secret("github-credentials", {
+                metadata: {
+                    name: "ghcr-auth",
+                    namespace: buildNamespace.metadata.name,
                 },
-                {
-                    parent: this,
-                    dependsOn:
-                        [
-                            tektonOperator,
-                            buildNamespace
-                        ],
+                stringData: {
+                    "config.json": pulumi.jsonStringify({
+                        "auths": {
+                            "ghcr.io": {
+                                "auth": config.requireSecret("ghcr-auth"),
+                            }
+                        }
+                    }),
                 }
-            )
-        ;
-
+            },
+            {
+                parent: this,
+                dependsOn:
+                    [
+                        tektonOperator,
+                        buildNamespace
+                    ],
+            }
+        );
         new k8s.networking.v1.Ingress("tekton-dashboard", {
             metadata: {
                 name: "tekton-dashboard",
                 namespace: "tekton-pipelines",
                 annotations: {
-                    "nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-                    "nginx.ingress.kubernetes.io/configuration-snippet": `rewrite ^(/dashboard)$ $1/ redirect;
-`
+                    "external-dns.alpha.kubernetes.io/hostname": "tekton.ediri.online",
+                    "external-dns.alpha.kubernetes.io/ttl": "60",
+                    "nginx.ingress.kubernetes.io/ssl-redirect": "false",
                 }
             },
             spec: {
                 ingressClassName: "nginx",
                 rules: [
                     {
+                        host: "tekton.ediri.online",
                         http: {
                             paths: [
                                 {
-                                    path: "/dashboard(/|$)(.*)",
+                                    path: "/",
                                     pathType: "Prefix",
                                     backend: {
                                         service: {

@@ -19,11 +19,30 @@ export class KubeVela extends pulumi.ComponentResource {
             parent: this,
         });
 
-        new local.Command("velaux", {
-            create: "vela addon enable velaux serviceType=LoadBalancer"
+        const velaux = new k8s.yaml.ConfigFile("velaux", {
+            file: ".velaux/addon-manifest.yaml",
+            skipAwait: true,
         }, {
             parent: this,
-            dependsOn: kubevela,
+            dependsOn: [
+                kubevela,
+            ],
+        });
+
+        new k8s.networking.v1.IngressPatch("vela-ingress-patch", {
+            metadata: {
+                name: "velaux-server",
+                namespace: kubevela.namespace,
+                annotations: {
+                    "external-dns.alpha.kubernetes.io/hostname": "velaux.ediri.online",
+                    "external-dns.alpha.kubernetes.io/ttl": "60",
+                }
+            }
+        }, {
+            parent: this,
+            dependsOn: [
+                velaux,
+            ],
         });
     }
 }

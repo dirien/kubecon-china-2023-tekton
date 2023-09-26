@@ -3,7 +3,3 @@ config:
     secure: AAABAJd6zBZSE4JgmikP7u3YujjUepHrAEJMv3Ry9mYyw1lp8Cf5iwnba6efZW3poYozTmvsGaAqkWjuKUFJKGEERa1FGU6mbYnrBhJGdTnXN70X5MnZqrkc+A24FM/3
   kubecon-china-tekton-kubernetes:git-credentials:
     secure: AAABAI+Yqg2q4Ce5GDJbUq/2agRlXEmfNU0Qvz8TVfuCg7TA5pnJfgjT8oB0SOEwS3PiKUIS0O4tIO86dKQ+ZA6Cmdar+SKIeIjcGOkNIA==
-  kubecon-china-tekton-kubernetes:ngrok-api-key:
-    secure: AAABAGpwhp+5+LnXBe+304WkwB96KwWybOkK4OodQ8QXPQMouYE9VyvlUbn+N0/t59rGy9E+h83T0W/xRco0VxTk0BrZO+mty7eVGD9KX8AG
-  kubecon-china-tekton-kubernetes:ngrok-authtoken:
-    secure: AAABAKSZ4SBs2/AqURgamKbeeNIyQ5poBKbBPjOTZFbNTZ1DEoe9Em0sMsXpjAU9jh89QKT9WecZMUi0PC53xmNRSLnCH8YibDdn2lj2bkO9
