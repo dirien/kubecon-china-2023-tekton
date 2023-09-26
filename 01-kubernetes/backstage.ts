@@ -3,11 +3,24 @@ import * as pulumi from "@pulumi/pulumi";
 import {local} from "@pulumi/command";
 import * as docker from "@pulumi/docker";
 
+
+export interface RegistryArgs {
+    username: pulumi.Input<string>;
+    password: pulumi.Input<string>;
+    server: pulumi.Input<string>;
+}
+
+export interface BackstageArgs {
+    registry?: RegistryArgs;
+    imageRepo?: pulumi.Input<string>;
+}
+
 export class Backstage extends pulumi.ComponentResource {
     public readonly imageName: pulumi.Output<string>;
     public readonly repoDigest: pulumi.Output<string>;
 
     constructor(name: string,
+                args?: BackstageArgs,
                 opts: pulumi.ComponentResourceOptions = {}) {
         super("pkg:index:Backstage", name, {}, opts);
         const backstageBuild = new local.Command("backstage-build", {
@@ -25,14 +38,19 @@ export class Backstage extends pulumi.ComponentResource {
                 builderVersion: docker.BuilderVersion.BuilderBuildKit,
                 dockerfile: "./backstage/packages/backend/Dockerfile",
             },
-            imageName: "backstage/backstage",
-            skipPush: true,
+            imageName: args?.imageRepo || "backstage/backstage",
+            skipPush: args?.registry === undefined,
+            registry: args?.registry ? {
+                server: args.registry.server,
+                username: args.registry.username,
+                password: args.registry.password,
+            } : undefined,
         }, {
             parent: this,
             dependsOn: backstageBuild,
         });
 
-        const backstage = new k8s.helm.v3.Release("backstage", {
+        new k8s.helm.v3.Release("backstage", {
             chart: "backstage",
             name: "backstage",
             version: "1.3.0",
@@ -44,18 +62,28 @@ export class Backstage extends pulumi.ComponentResource {
             values: {
                 backstage: {
                     image: {
-                        registry: "docker.io",
-                        repository: backstageImage.imageName,
-                        pullPolicy: "IfNotPresent",
+                        registry: args?.imageRepo ? backstageImage.imageName.apply(i => i.split("/")[0]) : "docker.io",
+                        repository: args?.imageRepo ? backstageImage.imageName.apply(i => i.split("/")[1]) : backstageImage.imageName,
+                        pullPolicy: "Always",
                     },
                     command: ["node", "packages/backend", "--config", "app-config.yaml", "--config", "app-config.production.yaml"]
                 },
                 ingress: {
                     enabled: true,
                     className: "nginx",
+                    host: "backstage.ediri.online",
+                    annotations: {
+                        "external-dns.alpha.kubernetes.io/hostname": "backstage.ediri.online",
+                        "external-dns.alpha.kubernetes.io/ttl": "60",
+                    }
                 },
                 service: {
-                    type: "LoadBalancer"
+                    type: "LoadBalancer",
+                    annotations: {
+                        "external-dns.alpha.kubernetes.io/hostname": "backstage-api.ediri.online",
+                        "external-dns.alpha.kubernetes.io/ttl": "60",
+                        "nginx.ingress.kubernetes.io/ssl-redirect": "false",
+                    }
                 }
             },
         }, {

@@ -6,16 +6,24 @@ import {Backstage} from "./backstage";
 import {ArgoCD} from "./argocd";
 import {KubeVela} from "./kubevela";
 import {Kyverno} from "./kyverno";
+import {ExternalDNS} from "./external-dns";
 
 const settings: pulumi.Config = new pulumi.Config("settings");
 const isLocal = settings.requireBoolean("isLocal");
 
-let kubeconfig = undefined;
-
+let kubeconfig;
+let registryArgs;
+let imageRepo;
 
 if (!isLocal) {
     const infraStackReference = new pulumi.StackReference("dirien/kubecon-china-tekton-infrastructure/dev");
     kubeconfig = infraStackReference.getOutput("kubeconfig");
+    registryArgs = {
+        server: infraStackReference.getOutput("registryServer"),
+        username: infraStackReference.getOutput("registryUsername"),
+        password: infraStackReference.requireOutput("registryPassword"),
+    }
+    imageRepo = infraStackReference.getOutput("imageRepo");
 }
 
 const k8sProvider = new k8s.Provider("k8s", {
@@ -24,29 +32,47 @@ const k8sProvider = new k8s.Provider("k8s", {
 });
 
 
-if (isLocal) {
-    // install nginx ingress controller
-    const nginx = new k8s.helm.v3.Release("nginx", {
-        chart: "ingress-nginx",
-        version: "4.7.2",
-        repositoryOpts: {
-            repo: "https://kubernetes.github.io/ingress-nginx",
-        },
-        namespace: "ingress-nginx",
-        name: "ingress-nginx",
-        createNamespace: true,
-        values: {
-            controller: {
-                allowSnippetAnnotations: true
+const k8sProviderNSSA = new k8s.Provider("k8s-nssa", {
+    kubeconfig: kubeconfig,
+    enableServerSideApply: false,
+});
+
+// install nginx ingress controller
+const nginx = new k8s.helm.v3.Release("nginx", {
+    chart: "ingress-nginx",
+    version: "4.7.2",
+    repositoryOpts: {
+        repo: "https://kubernetes.github.io/ingress-nginx",
+    },
+    namespace: "ingress-nginx",
+    name: "ingress-nginx",
+    createNamespace: true,
+    values: {
+        controller: {
+            allowSnippetAnnotations: true,
+            service: {
+                externalTrafficPolicy: isLocal ? "Local" : "Cluster",
             }
         }
-    }, {provider: k8sProvider});
-}
+    }
+}, {provider: k8sProvider});
+
+new ExternalDNS("external-dns", {
+    providers: {
+        kubernetes: k8sProvider,
+    },
+    dependsOn: [
+        nginx,
+    ]
+});
 
 const tekton = new Tekton("tekton", {
     providers: {
-        kubernetes: k8sProvider,
-    }
+        kubernetes: k8sProviderNSSA,
+    },
+    dependsOn: [
+        k8sProviderNSSA,
+    ]
 });
 
 new Kyverno("kyverno", {
@@ -72,7 +98,10 @@ new ArgoCD("argocd", {
 }, {
     providers: {
         kubernetes: k8sProvider,
-    }
+    },
+    dependsOn: [
+        nginx,
+    ]
 })
 
 new KubeVela("kubevela", {
@@ -81,10 +110,17 @@ new KubeVela("kubevela", {
     }
 })
 
+
 const backstage = new Backstage("backstage", {
+    registry: registryArgs,
+    imageRepo: imageRepo
+}, {
     providers: {
         kubernetes: k8sProvider,
-    }
+    },
+    dependsOn: [
+        nginx,
+    ]
 });
 
 export const imageName = backstage.imageName;

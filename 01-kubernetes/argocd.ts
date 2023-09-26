@@ -36,17 +36,20 @@ export class ArgoCD extends pulumi.ComponentResource {
                     },
                     params: {
                         "server\.insecure": true,
-                        "server\.basehref": "/argocd",
-                        "server\.rootpath": "/argocd"
                     }
                 },
                 server: {
                     ingress: {
                         enabled: true,
-                        paths: [
-                            "/argocd(/|$)(.*)"
-                        ],
                         ingressClassName: "nginx",
+                        hosts: [
+                            "argocd.ediri.online",
+                        ],
+                        annotations: {
+                            "external-dns.alpha.kubernetes.io/hostname": "argocd.ediri.online",
+                            "external-dns.alpha.kubernetes.io/ttl": "60",
+                            "nginx.ingress.kubernetes.io/ssl-redirect": "false",
+                        }
                     }
                 }
             }
