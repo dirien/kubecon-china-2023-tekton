@@ -1,0 +1,8 @@
+config:
+  kubecon-china-tekton-kubernetes:do-token:
+    secure: AAABAIISyGfWD2kRSI9sxQHd9+TToNX41iGSUw+q9UNYFfRg3fnFc/QZsdWN1JQ8qXUW0+fkZkh22O/F9KzoqzpxyjGaGO2U7lcR4KCHVDs72CPBzuM6AUZeyp9fzBSc
+  kubecon-china-tekton-kubernetes:ghcr-auth:
+    secure: AAABANeg1iym0pkd9w0SgxBMjkXqJx5xU8EP30cToiQBcFSkNcCtdKRg9wVnBfk2rkJ8aLr4cQOTXTSw1moTorQw+3sbeSe/5xMJGxKICVytZj+eHRVWiSn15E5DeTKJ
+  kubecon-china-tekton-kubernetes:git-credentials:
+    secure: AAABAPLx6/OfDrTmtB/FxTME4aItyEIahqWY6tWeBAQPdigY2sUZl9qwUOCvX6EaIQWF8QVh39Z7lKU177Wmd1NTK+fypUNev8waBBR8lg==
+  settings:isLocal: "false"

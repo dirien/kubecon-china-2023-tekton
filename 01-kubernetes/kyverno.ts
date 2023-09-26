@@ -100,7 +100,8 @@ export class Kyverno extends pulumi.ComponentResource {
             }, {
                 parent: this,
                 dependsOn: [
-                    kyverno
+                    kyverno,
+                    kyvernoPolicy,
                 ]
             });
         }

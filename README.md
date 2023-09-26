@@ -49,17 +49,6 @@ To follow along with the tutorial, you will need the following tools installed o
 - [helm](https://helm.sh/docs/intro/install/)
 - [k9s](https://k9scli.io/topics/install/)
 
-## Internet Connectivity
-
-In case you cannot access all the required resources from the internet, you can can drop the `00-infrastructure` stack
-and work with your local Kubernetes cluster. To do so, you need to:
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed on your machine.
-- or [Minikube](https://minikube.sigs.k8s.io/docs/start/) or [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
-  installed on your machine.
-
-In this tutorial, I will use Docker Desktop.
-
 ## Getting Started
 
 ### Step 1 - Clone the repo
@@ -83,7 +72,26 @@ cd kubecon-china-2023-tekton
 
 ### Step 2 - Set up Pulumi
 
-Change into the `01-kubernetes` directory.
+Change into the `00-infrastructure` directory.
+
+```bash
+cd 00-infrastructure
+npm install
+```
+
+You may need to log in to your AWS account. Follow the instructions on the screen to login. After you logged in, you
+can run the following command to create a new stack.
+
+> Please name your stack `dev` for this workshop
+
+```bash
+pulumi up
+```
+
+If the preview looks good, select `yes` to deploy the cluster, and the deployment will start. This can take a few
+minutes.
+
+After the infrastructure is deployed, you can change into the `01-kubernetes` directory.
 
 ```bash
 cd 01-kubernetes
@@ -92,14 +100,6 @@ npm install
 
 Most important part of a Pulumi program is the `Pulumi.yaml`. Here you can define and modify various settings. From
 the runtime of the programming language you are using to changing the default config values.
-
-- Change `settings:isLocal` to `true` if you want to use your local Kubernetes cluster.
-
-```yaml
-...
-config:
-  settings:isLocal: true
-```
 
 ### Step 3 - Run Pulumi Up
 
@@ -193,5 +193,5 @@ vela-system        kubevela-e2d2525d-vela-core-7c6cbcfbfd-2hfvw                 
 vela-system        velaux-server-655598d6c-mnbll                                     1/1     Running     0             6h41m
 ```
 
-Congratulations! You have successfully deployed the demo environment. Please leave the cluster up and running for the
-workshop.
+Congratulations! You have successfully deployed the tutorial environment. Please leave the cluster up and running for
+the workshop.
